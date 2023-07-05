@@ -21,19 +21,20 @@ func main() {
 	})
 
 	// UsersRoutes
-	e.GET("/users", getUsers)
-	e.GET("/users/:id", getUser)
-
+	users := e.Group("/users")
+	users.GET("", getUsers)
+	users.GET("/:id", getUser)
+	users.POST("", createUser)
 	e.Logger.Fatal(e.Start(":8081"))
 
 }
 
-type User struct {
+type UserModel struct {
 	ID   int    `json:"id"`
 	Name string `json:"name"`
 }
 
-var users = []User{
+var users = []UserModel{
 	{ID: 1, Name: "Michael"},
 	{ID: 2, Name: "Jack"},
 	{ID: 3, Name: "Jhon"},
@@ -58,4 +59,21 @@ func getUser(c echo.Context) error {
 		}
 	}
 	return c.JSON(http.StatusNotFound, "対象のユーザーが見つかりません")
+}
+
+type UserRequest struct {
+	Id   int    `json:"id"`
+	Name string `json:"name"`
+}
+
+func createUser(c echo.Context) error {
+	var user UserRequest
+	if err := c.Bind(&user); err != nil {
+		return c.String(http.StatusInternalServerError, "不正なユーザー名です")
+	}
+
+	userModel := UserModel{ID: user.Id, Name: user.Name}
+	users = append(users, userModel)
+
+	return c.JSON(http.StatusCreated, users)
 }
